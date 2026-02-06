@@ -10,7 +10,7 @@ export default function AlertsTab({ alerts }) {
         <MaterialCommunityIcons 
           name={item.type === 'success' ? 'check-circle-outline' : 'information-outline'} 
           size={24} 
-          color={item.type === 'success' ? COLORS.success : COLORS.secondary} 
+          color={item.type === 'success' ? COLORS.success : COLORS.info} 
         />
       </View>
       <View style={styles.textContainer}>
@@ -26,7 +26,7 @@ export default function AlertsTab({ alerts }) {
       <Text style={styles.headerTitle}>Notifications</Text>
       {alerts.length === 0 ? (
         <View style={styles.emptyState}>
-          <MaterialCommunityIcons name="bell-off-outline" size={64} color={COLORS.gray} />
+          <MaterialCommunityIcons name="bell-off-outline" size={64} color={COLORS.textTertiary} />
           <Text style={styles.emptyText}>No new notifications</Text>
         </View>
       ) : (
@@ -44,7 +44,7 @@ export default function AlertsTab({ alerts }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.background,
     paddingTop: 20,
   },
   headerTitle: {
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   },
   alertMessage: {
     fontSize: 14,
-    color: COLORS.textLight,
+    color: COLORS.textSecondary,
     marginBottom: 5,
   },
   alertTime: {

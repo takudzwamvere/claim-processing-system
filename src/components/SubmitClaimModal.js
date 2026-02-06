@@ -67,6 +67,12 @@ export default function SubmitClaimModal({ visible, onClose, onSubmit }) {
               numberOfLines={3}
             />
 
+            <Text style={styles.label}>Supporting Documents</Text>
+            <TouchableOpacity style={styles.uploadButton}>
+              <MaterialCommunityIcons name="cloud-upload" size={24} color={COLORS.primary} />
+              <Text style={styles.uploadText}>Upload Invoice / Receipt</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
               <Text style={styles.submitButtonText}>Submit Claim</Text>
             </TouchableOpacity>
@@ -84,7 +90,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -107,17 +113,17 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: COLORS.text,
     marginBottom: 8,
     marginTop: 10,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: COLORS.border,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: COLORS.background,
   },
   textArea: {
     height: 80,
@@ -135,5 +141,21 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  uploadButton: {
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    padding: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    backgroundColor: COLORS.ripple,
+  },
+  uploadText: {
+    marginLeft: 10,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
 });

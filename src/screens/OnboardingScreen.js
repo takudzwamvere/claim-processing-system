@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     borderRadius: 75,
-    backgroundColor: '#F3E5F5', // Very light purple
+    backgroundColor: COLORS.ripple, // Light purple background
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 40,
@@ -107,13 +107,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#000',
+    color: COLORS.text,
     textAlign: 'center',
     marginBottom: 15,
   },
   description: {
     fontSize: 16,
-    color: COLORS.textLight,
+    color: COLORS.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
   },
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     width: 20,
   },
   inactiveDot: {
-    backgroundColor: '#E0E0E0',
+    backgroundColor: COLORS.border,
   },
   buttonContainer: {
     flexDirection: 'row',

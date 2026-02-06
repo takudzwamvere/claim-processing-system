@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, Text, View, Image } from 'react-native';
+import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
@@ -25,7 +25,9 @@ export default function SplashScreen({ onFinish }) {
         <Text style={styles.poweredBy}>Powered by blockchain</Text>
       </View>
       <View style={styles.footer}>
-        <Text style={styles.getStartedButton}>Get Started</Text>
+        <TouchableOpacity onPress={onFinish} style={styles.button}>
+            <Text style={styles.buttonText}>Get Started</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -57,7 +59,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#000',
+    color: COLORS.text,
     marginBottom: 5,
   },
   subtitle: {
@@ -73,18 +75,20 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 50,
   },
-  getStartedButton: {
-    color: COLORS.white,
-    backgroundColor: COLORS.primaryLight, // Using a lighter purple for the button text background effect shown in image
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    overflow: 'hidden', // To clip the background
-    fontWeight: 'bold',
-    fontSize: 14,
-    // Actually the image shows "Get Started" as a button or just text. 
-    // Let's make it look like the button in the last screenshot (purple pill)
+  button: {
     backgroundColor: COLORS.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    borderRadius: 30,
+    elevation: 3,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  buttonText: {
     color: COLORS.white,
+    fontWeight: 'bold',
+    fontSize: 16,
   }
 });

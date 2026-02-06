@@ -29,12 +29,20 @@ export default function ClaimsTab({ claims }) {
   return (
     <View style={styles.container}>
       <Text style={styles.headerTitle}>My Claims</Text>
-      <FlatList
-        data={claims}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listContent}
-      />
+      {claims.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <MaterialCommunityIcons name="file-document-outline" size={64} color={COLORS.textTertiary} />
+          <Text style={styles.emptyText}>No claims found</Text>
+          <Text style={styles.emptySubText}>Submit a new claim to realize the magic</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={claims}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listContent}
+        />
+      )}
     </View>
   );
 }
@@ -42,7 +50,7 @@ export default function ClaimsTab({ claims }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.background,
     paddingTop: 20,
   },
   headerTitle: {
@@ -57,7 +65,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   claimCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
     padding: 15,
     borderRadius: 10,
     marginBottom: 10,
@@ -90,7 +98,7 @@ const styles = StyleSheet.create({
   },
   claimDate: {
     fontSize: 12,
-    color: COLORS.textLight,
+    color: COLORS.textSecondary,
     marginBottom: 5,
   },
   claimAmount: {
@@ -102,7 +110,7 @@ const styles = StyleSheet.create({
   blockchainInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3E5F5',
+    backgroundColor: COLORS.ripple,
     padding: 8,
     borderRadius: 5,
   },
@@ -112,5 +120,22 @@ const styles = StyleSheet.create({
     marginLeft: 5,
     flex: 1,
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 50,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginTop: 10,
+  },
+  emptySubText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginTop: 5,
   },
 });

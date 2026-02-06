@@ -1,11 +1,24 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, SafeAreaView, Platform, StatusBar as RNStatusBar } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, SafeAreaView, Platform, StatusBar as RNStatusBar, Alert, ActivityIndicator } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { supabase } from '../utils/supabase';
 import { COLORS } from '../constants/colors';
 
-export default function LoginScreen({ onLogin, onRegister }) {
+export default function LoginScreen({ onRegister }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function signInWithEmail() {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password: password,
+    });
+
+    if (error) Alert.alert('Login Error', error.message);
+    setLoading(false);
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -19,13 +32,14 @@ export default function LoginScreen({ onLogin, onRegister }) {
         </View>
 
         <View style={styles.formContainer}>
-          <Text style={styles.label}>Email or Member ID</Text>
+          <Text style={styles.label}>Email Address</Text>
           <TextInput
             style={styles.input}
             placeholder="member@example.com"
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
+            keyboardType="email-address"
           />
 
           <Text style={styles.label}>Password</Text>
@@ -41,8 +55,12 @@ export default function LoginScreen({ onLogin, onRegister }) {
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.signInButton} onPress={onLogin}>
-            <Text style={styles.signInButtonText}>Sign In</Text>
+          <TouchableOpacity style={styles.signInButton} onPress={signInWithEmail} disabled={loading}>
+            {loading ? (
+                <ActivityIndicator color={COLORS.white} />
+            ) : (
+                <Text style={styles.signInButtonText}>Sign In</Text>
+            )}
           </TouchableOpacity>
 
           <View style={styles.registerContainer}>
@@ -93,11 +111,6 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 15,
     marginBottom: 20,
-    // Positioning it slightly off-center to match the "floating" look if desired, 
-    // but centered is safer for responsiveness. The image shows it top left-ish relative to text?
-    // Actually it looks centered in the image provided.
-    alignSelf: 'flex-start', 
-    marginLeft: 0,
   },
   title: {
     fontSize: 24,
@@ -147,6 +160,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     alignItems: 'center',
     marginBottom: 15,
+    height: 48, 
+    justifyContent: 'center'
   },
   signInButtonText: {
     color: COLORS.white,

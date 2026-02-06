@@ -6,102 +6,114 @@ import SubmitClaimModal from '../components/SubmitClaimModal';
 import AlertsTab from '../components/AlertsTab';
 import ClaimsTab from '../components/ClaimsTab';
 
-const INITIAL_CLAIMS = [
-  {
-    id: 1,
-    provider: 'Parirenyatwa Hospital',
-    date: '2024-11-25',
-    amount: '$245.00',
-    status: 'Approved',
-    statusColor: COLORS.success,
-    txHash: '0x7f...3a2b',
-  },
-  {
-    id: 2,
-    provider: 'Dr. Chikwende',
-    date: '2024-11-20',
-    amount: '$85.00',
-    status: 'In Review',
-    statusColor: COLORS.primary,
-    txHash: '0x8a...9c1d',
-  },
-  {
-    id: 3,
-    provider: 'MedLabs Zimbabwe',
-    date: '2024-11-18',
-    amount: '$120.00',
-    status: 'Submitted',
-    statusColor: COLORS.secondary,
-    txHash: '0x1b...4e5f',
-  },
-];
+import { supabase } from '../utils/supabase';
 
-export default function DashboardScreen() {
+const INITIAL_CLAIMS = []; // Start empty
+
+export default function DashboardScreen({ session }) {
   const [activeTab, setActiveTab] = useState('Home');
   const [modalVisible, setModalVisible] = useState(false);
-  const [claims, setClaims] = useState(INITIAL_CLAIMS);
+  const [claims, setClaims] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationStep, setSimulationStep] = useState('');
+  const [userProfile, setUserProfile] = useState(null);
+
+  useEffect(() => {
+    fetchClaims();
+    getProfile();
+
+    // Subscribe to realtime changes
+    const subscription = supabase
+      .channel('claims')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'claims' }, payload => {
+        // Simple reload for now, or splice logic
+        console.log('Change received!', payload)
+        fetchClaims();
+        // If an update happened to an existing claim, show alert
+        if (payload.eventType === 'UPDATE' && payload.new.status) {
+           addAlert('Claim Updated', `Claim status changed to: ${payload.new.status}`);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    }
+  }, [session]);
+
+  const fetchClaims = async () => {
+    try {
+        const { data, error } = await supabase
+            .from('claims')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        if (data) setClaims(data);
+    } catch (error) {
+        Alert.alert('Error fetching claims', error.message);
+    }
+  }
+
+  const getProfile = async () => {
+      try {
+        // If you have a profiles table
+        // const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+        // setUserProfile(data);
+        setUserProfile({ email: session.user.email, id: session.user.id });
+      } catch (error) {
+          console.log(error);
+      }
+  }
 
   const handleSubmitClaim = async (claimData) => {
     setModalVisible(false);
     setIsSimulating(true);
 
-    // Simulation Steps
-    const steps = [
-      'Encrypting claim data...',
-      'Submitting to blockchain...',
-      'Validating smart contract...',
-      'Recording transaction...',
-    ];
+    // Simulation Steps (Still keep visual feedback)
+    setSimulationStep('Encrypting claim data...');
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setSimulationStep('Submitting to blockchain...');
 
-    for (const step of steps) {
-      setSimulationStep(step);
-      await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+        const { data, error } = await supabase
+        .from('claims')
+        .insert([
+            { 
+              user_id: session.user.id,
+              provider: claimData.provider,
+              amount: claimData.amount, // Ensure this is stored as text or number in DB
+              date: claimData.date,
+              status: 'Pending',
+              // Add other fields matching your Supabase table
+            },
+        ])
+        .select();
+
+        if (error) throw error;
+
+        setSimulationStep('Recording transaction...');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Add notification
+        const newAlert = {
+            id: Date.now(),
+            title: 'Claim Submitted',
+            message: `Your claim for ${claimData.provider} has been recorded.`,
+            time: 'Just now',
+            type: 'success',
+        };
+        setAlerts([newAlert, ...alerts]);
+        
+        // fetchClaims(); // subscription will catch this, but safe to call
+    } catch (error) {
+        Alert.alert('Submission Error', error.message);
+    } finally {
+        setIsSimulating(false);
+        setSimulationStep('');
     }
-
-    // Create new claim
-    const newClaim = {
-      id: Date.now(),
-      provider: claimData.provider,
-      date: claimData.date,
-      amount: `$${claimData.amount}`,
-      status: 'Pending',
-      statusColor: COLORS.warning,
-      txHash: `0x${Math.random().toString(16).substr(2, 10)}...${Math.random().toString(16).substr(2, 4)}`,
-    };
-
-    setClaims([newClaim, ...claims]);
-    setIsSimulating(false);
-    setSimulationStep('');
-
-    // Add notification
-    const newAlert = {
-      id: Date.now(),
-      title: 'Claim Submitted',
-      message: `Your claim for ${claimData.provider} has been securely recorded on the blockchain.`,
-      time: 'Just now',
-      type: 'success',
-    };
-    setAlerts([newAlert, ...alerts]);
-
-    // Simulate automated processing after a delay
-    setTimeout(() => {
-      updateClaimStatus(newClaim.id, 'In Review', COLORS.primary);
-      addAlert('Claim Update', `Claim #${newClaim.id} is now being validated by the smart contract.`);
-    }, 5000);
-
-    setTimeout(() => {
-      updateClaimStatus(newClaim.id, 'Approved', COLORS.success);
-      addAlert('Claim Approved', `Claim #${newClaim.id} has been approved and payment settlement initiated.`);
-    }, 10000);
-  };
-
-  const updateClaimStatus = (id, status, color) => {
-    setClaims(prevClaims => prevClaims.map(c => 
-      c.id === id ? { ...c, status, statusColor: color } : c
-    ));
   };
 
   const addAlert = (title, message) => {
@@ -133,10 +145,10 @@ export default function DashboardScreen() {
             <View style={styles.header}>
               <View>
                 <Text style={styles.greeting}>Hello,</Text>
-                <Text style={styles.userName}>Angelica</Text>
+                <Text style={styles.userName}>{userProfile?.email ? userProfile.email.split('@')[0] : 'User'}</Text>
               </View>
-              <TouchableOpacity style={styles.profileIcon} onPress={() => setActiveTab('Profile')}>
-                 <MaterialCommunityIcons name="account-circle" size={40} color={COLORS.white} />
+              <TouchableOpacity style={styles.profileIcon} onPress={() => supabase.auth.signOut()}>
+                 <MaterialCommunityIcons name="logout" size={30} color={COLORS.white} />
               </TouchableOpacity>
             </View>
 
@@ -213,8 +225,10 @@ export default function DashboardScreen() {
         return (
           <View style={[styles.container, { alignItems: 'center', justifyContent: 'center' }]}>
             <MaterialCommunityIcons name="account-circle" size={100} color={COLORS.primary} />
-            <Text style={{ fontSize: 24, fontWeight: 'bold', marginTop: 20 }}>Angelica Mpofu</Text>
-            <Text style={{ color: COLORS.textLight }}>Member ID: 63-123456A63</Text>
+            <Text style={{ fontSize: 24, fontWeight: 'bold', marginTop: 20 }}>
+              {userProfile?.email ? userProfile.email.split('@')[0] : 'User Profile'}
+            </Text>
+            <Text style={{ color: COLORS.textLight }}>Member ID: {session?.user?.id?.slice(0, 8).toUpperCase() || 'UNKNOWN'}</Text>
           </View>
         );
       default:
@@ -266,7 +280,7 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primaryDark,
     paddingTop: Platform.OS === 'android' ? RNStatusBar.currentHeight : 0,
   },
   headerBackground: {
@@ -275,11 +289,11 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 200,
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primaryDark,
   },
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.background,
   },
   contentContainer: {
     paddingBottom: 100,
@@ -290,7 +304,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 20,
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primaryDark,
   },
   greeting: {
     fontSize: 18,
@@ -331,7 +345,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   banner: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
     marginHorizontal: 20,
     borderRadius: 10,
     flexDirection: 'row',
@@ -346,7 +360,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   bannerIconContainer: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primaryDark,
     width: 50,
     height: 50,
     borderRadius: 10,
@@ -360,16 +374,16 @@ const styles = StyleSheet.create({
   bannerTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#000',
+    color: COLORS.text,
   },
   bannerSubtitle: {
     fontSize: 12,
-    color: COLORS.textLight,
+    color: COLORS.textSecondary,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
+    color: COLORS.text,
     marginLeft: 20,
     marginBottom: 15,
   },
@@ -380,7 +394,7 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
     marginHorizontal: 5,
     padding: 20,
     borderRadius: 10,
@@ -399,7 +413,7 @@ const styles = StyleSheet.create({
   },
   actionSubtitle: {
     fontSize: 11,
-    color: COLORS.textLight,
+    color: COLORS.textSecondary,
     marginTop: 2,
   },
   recentClaimsHeader: {
@@ -418,7 +432,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   claimCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
     padding: 15,
     borderRadius: 10,
     marginBottom: 10,
@@ -439,7 +453,7 @@ const styles = StyleSheet.create({
   },
   claimDate: {
     fontSize: 12,
-    color: COLORS.textLight,
+    color: COLORS.textSecondary,
     marginBottom: 5,
   },
   claimAmount: {
@@ -451,7 +465,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
@@ -466,7 +480,7 @@ const styles = StyleSheet.create({
   },
   navText: {
     fontSize: 10,
-    color: COLORS.gray,
+    color: COLORS.textTertiary,
     marginTop: 4,
   },
   activeNavText: {
@@ -485,7 +499,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.background,
   },
   simulationText: {
     marginTop: 20,

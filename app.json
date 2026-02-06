@@ -2,6 +2,7 @@
   "expo": {
     "name": "claim-processing-system",
     "slug": "claim-processing-system",
+    "scheme": "medchain",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
